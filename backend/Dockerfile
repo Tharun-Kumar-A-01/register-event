@@ -15,14 +15,14 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements file to the working directory
-COPY requirements.txt .
+COPY backend/requirements.txt .
 
 # Upgrade pip and install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code to the working directory
-COPY . .
+COPY backend/ .
 
 # Expose the port (Railway provides the PORT env variable automatically)
 EXPOSE 8080
