@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login</title>
+</head>
+
+<body>
+    <h1>Admin Login</h1>
+
+    <div id="message"></div>
+
+    <form id="loginForm">
+        <div>
+            <label for="username">Username</label><br>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <br>
+
+        <div>
+            <label for="password">Password</label><br>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <br>
+
+        <button type="submit" id="loginBtn">Login</button>
+    </form>
+
+    <script>
+        const API_BASE = "http://localhost:8000";
+
+        // If already logged in, redirect to admin panel
+        if (sessionStorage.getItem("admin_token")) {
+            window.location.href = "admin-panel.html";
+        }
+
+        document.getElementById("loginForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const messageDiv = document.getElementById("message");
+            const loginBtn = document.getElementById("loginBtn");
+            messageDiv.textContent = "";
+
+            const payload = {
+                username: document.getElementById("username").value,
+                password: document.getElementById("password").value,
+            };
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = "Logging in...";
+
+            try {
+                const response = await fetch(API_BASE + "/admin/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    messageDiv.textContent = "Error: " + (data.detail || "Login failed");
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = "Login";
+                    return;
+                }
+
+                sessionStorage.setItem("admin_token", data.token);
+                window.location.href = "admin-panel.html";
+
+            } catch (err) {
+                messageDiv.textContent = "Network error: " + err.message;
+                loginBtn.disabled = false;
+                loginBtn.textContent = "Login";
+            }
+        });
+    </script>
+</body>
+
+</html>

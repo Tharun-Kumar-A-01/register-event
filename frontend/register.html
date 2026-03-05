@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Event</title>
+</head>
+<body>
+    <h1>Register Event</h1>
+
+    <div id="message"></div>
+
+    <form id="eventForm">
+        <div>
+            <label for="eventName">Event Name</label><br>
+            <input type="text" id="eventName" name="eventName" required>
+        </div>
+        <br>
+
+        <div>
+            <label for="eventDescription">Event Description</label><br>
+            <textarea id="eventDescription" name="eventDescription" rows="4" required></textarea>
+        </div>
+        <br>
+
+        <div>
+            <label for="eventDate">Event Date</label><br>
+            <input type="date" id="eventDate" name="eventDate" required>
+        </div>
+        <br>
+
+        <div>
+            <label for="eventTime">Event Time</label><br>
+            <input type="time" id="eventTime" name="eventTime" required>
+        </div>
+        <br>
+
+        <div>
+            <label for="eventVenue">Event Venue</label><br>
+            <input type="text" id="eventVenue" name="eventVenue" required>
+        </div>
+        <br>
+
+        <div>
+            <label for="eventLink">Event Link</label><br>
+            <input type="url" id="eventLink" name="eventLink" placeholder="https://example.com/event" required>
+        </div>
+        <br>
+
+        <div>
+            <label for="location">Location</label><br>
+            <input type="text" id="location" name="location" required>
+        </div>
+        <br>
+
+        <div>
+            <label for="communityName">Community Name</label><br>
+            <input type="text" id="communityName" name="communityName" required>
+        </div>
+        <br>
+
+        <div>
+            <label for="email">Email</label><br>
+            <input type="email" id="email" name="email" required>
+        </div>
+        <br>
+
+        <button type="submit" id="submitBtn">Submit Event</button>
+    </form>
+
+    <script>
+        const API_BASE = "http://localhost:8000";
+
+        document.getElementById("eventForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const messageDiv = document.getElementById("message");
+            const submitBtn = document.getElementById("submitBtn");
+            messageDiv.textContent = "";
+
+            const timeValue = document.getElementById("eventTime").value;
+            const formattedTime = timeValue.length === 5 ? timeValue + ":00" : timeValue;
+
+            const payload = {
+                eventName: document.getElementById("eventName").value,
+                eventDescription: document.getElementById("eventDescription").value,
+                eventDate: document.getElementById("eventDate").value,
+                eventTime: formattedTime,
+                eventVenue: document.getElementById("eventVenue").value,
+                eventLink: document.getElementById("eventLink").value,
+                location: document.getElementById("location").value,
+                communityName: document.getElementById("communityName").value,
+                email: document.getElementById("email").value,
+            };
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Submitting...";
+
+            try {
+                const response = await fetch(API_BASE + "/events", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    messageDiv.textContent = "Error: " + (data.detail || "Something went wrong");
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Submit Event";
+                    return;
+                }
+
+                // Store token and redirect to OTP page
+                sessionStorage.setItem("otp_token", data.token);
+                sessionStorage.setItem("otp_email", payload.email);
+                window.location.href = "verify-otp.html";
+
+            } catch (err) {
+                messageDiv.textContent = "Network error: " + err.message;
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Submit Event";
+            }
+        });
+    </script>
+</body>
+</html>

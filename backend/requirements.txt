@@ -1,0 +1,8 @@
+fastapi
+sqlmodel
+pydantic[email]
+python-jose[cryptography]
+bcrypt
+python-dotenv
+psycopg[binary]
+uvicorn

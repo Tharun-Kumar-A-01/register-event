@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+</head>
+
+<body>
+    <h1>Admin Panel</h1>
+    <button id="logoutBtn">Logout</button>
+    <button id="refreshBtn">Refresh Events</button>
+    <hr>
+
+    <div id="message"></div>
+
+    <h2>All Events</h2>
+    <table id="eventsTable" border="1" cellpadding="5">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Event Name</th>
+                <th>Description</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Venue</th>
+                <th>Link</th>
+                <th>Location</th>
+                <th>Community</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Created At</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="eventsBody">
+        </tbody>
+    </table>
+
+    <p id="noEvents" hidden>No events found.</p>
+
+    <script>
+        const API_BASE = "http://localhost:8000";
+
+        const token = sessionStorage.getItem("admin_token");
+
+        if (!token) {
+            window.location.href = "admin-login.html";
+        }
+
+        // Logout
+        document.getElementById("logoutBtn").addEventListener("click", function () {
+            sessionStorage.removeItem("admin_token");
+            window.location.href = "admin-login.html";
+        });
+
+        // Refresh
+        document.getElementById("refreshBtn").addEventListener("click", loadEvents);
+
+        async function loadEvents() {
+            const messageDiv = document.getElementById("message");
+            const tbody = document.getElementById("eventsBody");
+            const noEvents = document.getElementById("noEvents");
+            messageDiv.textContent = "";
+            tbody.innerHTML = "";
+            noEvents.hidden = true;
+
+            try {
+                const response = await fetch(API_BASE + "/admin/events", {
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + token,
+                    },
+                });
+
+                if (response.status === 401) {
+                    messageDiv.textContent = "Session expired. Please login again.";
+                    sessionStorage.removeItem("admin_token");
+                    setTimeout(function () {
+                        window.location.href = "admin-login.html";
+                    }, 2000);
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    messageDiv.textContent = "Error: " + (data.detail || "Failed to load events");
+                    return;
+                }
+
+                if (data.length === 0) {
+                    noEvents.hidden = false;
+                    return;
+                }
+
+                data.forEach(function (event) {
+                    const tr = document.createElement("tr");
+
+                    const statusText = event.approved ? "Approved" : "Pending";
+
+                    tr.innerHTML =
+                        "<td>" + event.id + "</td>" +
+                        "<td>" + escapeHtml(event.eventName) + "</td>" +
+                        "<td>" + escapeHtml(event.eventDescription) + "</td>" +
+                        "<td>" + event.eventDate + "</td>" +
+                        "<td>" + event.eventTime + "</td>" +
+                        "<td>" + escapeHtml(event.eventVenue) + "</td>" +
+                        "<td><a href=\"" + escapeHtml(event.eventLink) + "\" target=\"_blank\">Link</a></td>" +
+                        "<td>" + escapeHtml(event.location) + "</td>" +
+                        "<td>" + escapeHtml(event.communityName) + "</td>" +
+                        "<td>" + escapeHtml(event.email) + "</td>" +
+                        "<td>" + statusText + "</td>" +
+                        "<td>" + new Date(event.created_at).toLocaleString() + "</td>" +
+                        "<td></td>";
+
+                    // Action buttons in last cell
+                    const actionsCell = tr.lastElementChild;
+
+                    if (!event.approved) {
+                        const approveBtn = document.createElement("button");
+                        approveBtn.textContent = "Approve";
+                        approveBtn.addEventListener("click", function () {
+                            approveEvent(event.id);
+                        });
+                        actionsCell.appendChild(approveBtn);
+                        actionsCell.appendChild(document.createTextNode(" "));
+                    }
+
+                    const deleteBtn = document.createElement("button");
+                    deleteBtn.textContent = "Delete";
+                    deleteBtn.addEventListener("click", function () {
+                        deleteEvent(event.id, event.eventName);
+                    });
+                    actionsCell.appendChild(deleteBtn);
+
+                    tbody.appendChild(tr);
+                });
+
+            } catch (err) {
+                messageDiv.textContent = "Network error: " + err.message;
+            }
+        }
+
+        async function approveEvent(eventId) {
+            const messageDiv = document.getElementById("message");
+            messageDiv.textContent = "";
+
+            try {
+                const response = await fetch(API_BASE + "/admin/approve", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token,
+                    },
+                    body: JSON.stringify({ id: eventId }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    messageDiv.textContent = "Error: " + (data.detail || "Approve failed");
+                    return;
+                }
+
+                messageDiv.textContent = data.message;
+                loadEvents();
+
+            } catch (err) {
+                messageDiv.textContent = "Network error: " + err.message;
+            }
+        }
+
+        async function deleteEvent(eventId, eventName) {
+            if (!confirm("Are you sure you want to delete event: " + eventName + "?")) {
+                return;
+            }
+
+            const messageDiv = document.getElementById("message");
+            messageDiv.textContent = "";
+
+            try {
+                const response = await fetch(API_BASE + "/admin/delete", {
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token,
+                    },
+                    body: JSON.stringify({ id: eventId }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    messageDiv.textContent = "Error: " + (data.detail || "Delete failed");
+                    return;
+                }
+
+                messageDiv.textContent = data.message;
+                loadEvents();
+
+            } catch (err) {
+                messageDiv.textContent = "Network error: " + err.message;
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement("div");
+            div.appendChild(document.createTextNode(text));
+            return div.innerHTML;
+        }
+
+        // Load events on page load
+        loadEvents();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify OTP</title>
+</head>
+
+<body>
+    <h1>Verify OTP</h1>
+    <p>Enter the 6-digit OTP sent to <strong id="emailDisplay"></strong></p>
+
+    <div id="message"></div>
+
+    <div id="otpContainer">
+        <input type="text" class="otp-box" maxlength="1" data-index="0" inputmode="numeric" autofocus>
+        <input type="text" class="otp-box" maxlength="1" data-index="1" inputmode="numeric">
+        <input type="text" class="otp-box" maxlength="1" data-index="2" inputmode="numeric">
+        <input type="text" class="otp-box" maxlength="1" data-index="3" inputmode="numeric">
+        <input type="text" class="otp-box" maxlength="1" data-index="4" inputmode="numeric">
+        <input type="text" class="otp-box" maxlength="1" data-index="5" inputmode="numeric">
+    </div>
+    <br>
+
+    <button id="verifyBtn">Verify OTP</button>
+    <br><br>
+    <a href="register.html">Back to Registration</a>
+
+    <script>
+        const API_BASE = "http://localhost:8000";
+
+        const token = sessionStorage.getItem("otp_token");
+        const email = sessionStorage.getItem("otp_email");
+
+        if (!token) {
+            document.getElementById("message").textContent = "No token found. Please register an event first.";
+        }
+
+        document.getElementById("emailDisplay").textContent = email || "your email";
+
+        const boxes = document.querySelectorAll(".otp-box");
+
+        // Auto-focus next box on input
+        boxes.forEach(function (box, index) {
+            box.addEventListener("input", function () {
+                const val = box.value;
+                // Allow only digits
+                if (!/^\d$/.test(val)) {
+                    box.value = "";
+                    return;
+                }
+                // Move to next box
+                if (index < 5) {
+                    boxes[index + 1].focus();
+                }
+            });
+
+            // Handle backspace to go to previous box
+            box.addEventListener("keydown", function (e) {
+                if (e.key === "Backspace" && box.value === "" && index > 0) {
+                    boxes[index - 1].focus();
+                    boxes[index - 1].value = "";
+                }
+            });
+        });
+
+        // Handle paste: distribute digits across boxes
+        boxes[0].addEventListener("paste", function (e) {
+            e.preventDefault();
+            const pasted = (e.clipboardData || window.clipboardData).getData("text").trim();
+            const digits = pasted.replace(/\D/g, "").split("");
+            for (let i = 0; i < 6 && i < digits.length; i++) {
+                boxes[i].value = digits[i];
+            }
+            // Focus the last filled box or the next empty one
+            const focusIndex = Math.min(digits.length, 5);
+            boxes[focusIndex].focus();
+        });
+
+        document.getElementById("verifyBtn").addEventListener("click", async function () {
+            const messageDiv = document.getElementById("message");
+            const verifyBtn = document.getElementById("verifyBtn");
+            messageDiv.textContent = "";
+
+            // Collect OTP from all boxes
+            let otp = "";
+            boxes.forEach(function (box) {
+                otp += box.value;
+            });
+
+            if (otp.length !== 6 || !/^\d{6}$/.test(otp)) {
+                messageDiv.textContent = "Please enter all 6 digits.";
+                return;
+            }
+
+            if (!token) {
+                messageDiv.textContent = "No token found. Please register an event first.";
+                return;
+            }
+
+            verifyBtn.disabled = true;
+            verifyBtn.textContent = "Verifying...";
+
+            try {
+                const response = await fetch(API_BASE + "/verifyotp", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token,
+                    },
+                    body: JSON.stringify({ otp: otp }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    messageDiv.textContent = "Error: " + (data.detail || "Verification failed");
+                    verifyBtn.disabled = false;
+                    verifyBtn.textContent = "Verify OTP";
+                    return;
+                }
+
+                messageDiv.textContent = data.message || "Verified successfully! Your event is pending admin approval.";
+                verifyBtn.disabled = true;
+                verifyBtn.textContent = "Verified";
+
+                // Clear session data
+                sessionStorage.removeItem("otp_token");
+                sessionStorage.removeItem("otp_email");
+
+            } catch (err) {
+                messageDiv.textContent = "Network error: " + err.message;
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = "Verify OTP";
+            }
+        });
+    </script>
+</body>
+
+</html>
