@@ -383,19 +383,6 @@ async def lifespan(app: FastAPI):
     SQLModel.metadata.create_all(engine)
     logger.info("Database tables ready")
 
-    # with Session(engine) as session:
-    #     existing_admin = session.exec(
-    #         select(Admin).where(Admin.username == "admin")
-    #     ).first()
-    #     if not existing_admin:
-    #         admin = Admin(
-    #             username="admin",
-    #             hashed_password=hash_password("ADMIN123"),
-    #         )
-    #         session.add(admin)
-    #         session.commit()
-    #         logger.info("Seeded dev admin user (username: admin)")
-
     yield  # App runs here
 
     logger.info("Shutting down")
