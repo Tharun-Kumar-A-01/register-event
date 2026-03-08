@@ -9,13 +9,14 @@ load_dotenv()
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 JWT_SECRET = os.environ.get("JWT_SECRET")
-GMAIL_USER = os.environ.get("GMAIL_USER")
-GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD")
+MAILJET_API_KEY = os.environ.get("MJ_APIKEY_PUBLIC")
+MAILJET_API_SECRET = os.environ.get("MJ_APIKEY_PRIVATE")
+MAILJET_SENDER_EMAIL = os.environ.get("MJ_SENDER_EMAIL")
 
-if not all([DATABASE_URL, JWT_SECRET, GMAIL_USER, GMAIL_APP_PASSWORD]):
+if not all([DATABASE_URL, JWT_SECRET, MAILJET_API_KEY, MAILJET_API_SECRET, MAILJET_SENDER_EMAIL]):
     raise RuntimeError(
         "Missing required environment variables. "
-        "Set DATABASE_URL, JWT_SECRET, GMAIL_USER, GMAIL_APP_PASSWORD in .env"
+        "Set DATABASE_URL, JWT_SECRET, MJ_APIKEY_PUBLIC, MJ_APIKEY_PRIVATE, MJ_SENDER_EMAIL in .env"
     )
 
 # ---------------------------------------------------------------------------
