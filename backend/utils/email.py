@@ -2,7 +2,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from config import GMAIL_USER, GMAIL_APP_PASSWORD, OTP_EXPIRY_MINUTES, logger
-
+import socket
 
 def send_otp_email(recipient: str, otp: str) -> None:
     """Synchronous email sending — called from a background task."""
@@ -19,7 +19,9 @@ def send_otp_email(recipient: str, otp: str) -> None:
         )
         msg.attach(MIMEText(body, "plain"))
 
-        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+        smtp_host = socket.gethostbyname("smtp.gmail.com")
+        
+        with smtplib.SMTP(smtp_host, 587) as server:
             server.starttls()
             server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
             server.sendmail(GMAIL_USER, recipient, msg.as_string())
