@@ -7,16 +7,20 @@ from dotenv import load_dotenv
 # ---------------------------------------------------------------------------
 load_dotenv()
 
-DATABASE_URL = os.environ.get("DATABASE_URL")
+DB_HOST = os.environ.get("DB_HOST")
+DB_PORT = os.environ.get("DB_PORT")
+DB_NAME = os.environ.get("DB_NAME")
+DB_USERNAME = os.environ.get("DB_USERNAME")
+DB_PASSWORD = os.environ.get("DB_PASSWORD")
 JWT_SECRET = os.environ.get("JWT_SECRET")
 MAILJET_API_KEY = os.environ.get("MJ_APIKEY_PUBLIC")
 MAILJET_API_SECRET = os.environ.get("MJ_APIKEY_PRIVATE")
 MAILJET_SENDER_EMAIL = os.environ.get("MJ_SENDER_EMAIL")
 
-if not all([DATABASE_URL, JWT_SECRET, MAILJET_API_KEY, MAILJET_API_SECRET, MAILJET_SENDER_EMAIL]):
+if not all([DB_HOST, DB_PORT, DB_NAME, DB_USERNAME, DB_PASSWORD, JWT_SECRET, MAILJET_API_KEY, MAILJET_API_SECRET, MAILJET_SENDER_EMAIL]):
     raise RuntimeError(
         "Missing required environment variables. "
-        "Set DATABASE_URL, JWT_SECRET, MJ_APIKEY_PUBLIC, MJ_APIKEY_PRIVATE, MJ_SENDER_EMAIL in .env"
+        "Set DB_HOST, DB_PORT, DB_NAME, DB_USERNAME, DB_PASSWORD, JWT_SECRET, MJ_APIKEY_PUBLIC, MJ_APIKEY_PRIVATE, MJ_SENDER_EMAIL in .env"
     )
 
 # ---------------------------------------------------------------------------

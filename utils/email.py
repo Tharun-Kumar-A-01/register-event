@@ -20,7 +20,7 @@ def _build_otp_html(otp: str) -> str:
             <td style="padding:28px 32px 0 32px;">
               <span style="background:#7bee5e;color:#131313;font-weight:bold;padding:4px 10px;font-size:14px;font-family:'Courier New',Courier,monospace;">sudoers</span>
             </td>
-          </tr>
+          </tr> 
           <!-- Title -->
           <tr>
             <td style="padding:24px 32px 8px 32px;">
